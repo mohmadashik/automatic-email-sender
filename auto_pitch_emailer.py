@@ -10,24 +10,29 @@ your_email = "imashikg@gmail.com"
 your_password = "jbao usic aibn pkkv"
 
 # Directories and files
-scripts_dir = '/home/amohmad/Documents/ashik/scripts'
-production_file = 'production_companies.json'
+scripts_dir = '/home/amohmad/lab/automatic-email-sender/synopsis/'
+production_files = ['valid_tamil_production_companies.json','valid_telugu_production_companies.json','valid_production_companies.json']
+# production_files = ['test_emails.json']
 
 # Fetch the script file names (PDFs)
 def get_script_file_names(directory):
-    return [f for f in os.listdir(directory) if f.endswith('.pdf')]
+    # return full list of full paths 
+    return [os.path.join(directory, f) for f in os.listdir(directory) if f.endswith('.pdf')]
+    # return [f for f in os.listdir(directory) if f.endswith('.pdf')]
 
 # Load production companies from the JSON file
 def load_production_companies():
-    if os.path.exists(production_file):
-        with open(production_file, 'r') as file:
-            return json.load(file)
-    return {}
+    production_companies = {}
+    for production_file in production_files:
+        if os.path.exists(production_file):
+            with open(production_file, 'r') as file:
+                data = json.load(file)
+                for name,email in data.items():
+                    # Check if the company name already exists
+                    if name not in production_companies:
+                        production_companies[name] = email
+    return production_companies
 
-# Save production companies to the JSON file
-def save_production_companies(companies):
-    with open(production_file, 'w') as file:
-        json.dump(companies, file, indent=4)
 
 # Function to send an email
 def send_email(company_name, to_email, subject, body, attachments):
@@ -39,7 +44,7 @@ def send_email(company_name, to_email, subject, body, attachments):
         msg['From'] = your_email
         msg['To'] = to_email
         msg['Subject'] = subject
-        msg.attach(MIMEText(body, 'plain'))
+        msg.attach(MIMEText(body, 'html'))
 
         # Attach the PDF files
         for attachment in attachments:
@@ -68,20 +73,9 @@ def send_email(company_name, to_email, subject, body, attachments):
         print(f"Error sending email to {company_name}: {e}")
 
 # Function to send the story and synopsis
-def send_story(new_scripts):
-    subject = "My Story and Synopsis"
-    body_template = """
-    Dear {company_name},
+def send_story():
 
-    I hope this email finds you well. Attached is the synopsis and complete story of my work that I believe would be a great fit for your production company.
-
-    Looking forward to your feedback.
-
-    Best regards,
-    Mohmad Ashik M A
-    +91 99121 40409
-    """
-    
+    subject = "BRO CODE #0143 - Feature Film Pitch & Synopsis"
     # Load production companies
     production_companies = load_production_companies()
     
@@ -93,16 +87,44 @@ def send_story(new_scripts):
 
     # Send email to new companies and follow-ups for existing ones
     for company_name, email in production_companies.items():
-        if new_scripts:
-            body = body_template.format(company_name=company_name)
-            send_email(company_name, email, subject, body, attachments)
+        body_template = f"""
+<html>
+  <body style="font-family: Arial, sans-serif; font-size: 16px; color: #333; line-height: 1.6; padding: 20px;">
+    <p>Dear <strong>{company_name}</strong>,</p>
+
+    <p>I hope this message finds you well.</p>
+
+    <p>
+      I’m excited to share with you the synopsis of a film script titled <br>
+      <strong style="color: #d62828;">BRO CODE #0143</strong>.  
+    </p>
+    <p>
+      <strong>Genre:</strong> Comedy, Action, Drama — with a blink of Sci-Fi ✨  
+    </p>
+
+    <p>
+      This story is <strong>high-concept</strong>, <strong>commercially viable</strong>, and has the potential to evolve into a successful film franchise.
+    </p>
+    <p>
+      The <strong>full bound screenplay is ready</strong> and available upon request. I'd love to explore a collaboration with your team to bring this project to life on screen.
+    </p>
+
+    <p style="font-style: italic; font-weight: bold; color: #2a9d8f;">
+      This is not just a film — this will become a legacy for those who give it a chance.
+    </p>
+
+    <p>I look forward to hearing from you.</p>
+
+    <p>
+      Warm regards,<br />
+      <strong>Mohmad Ashik M A</strong><br />
+      📞 +91 99121 40409
+    </p>
+  </body>
+</html>
+        """
+        send_email(company_name, email, subject, body_template, attachments)
     
-    if new_scripts:
-        print("New script emails sent to all companies!")
-
-    # Send follow-up email for all companies
-    send_follow_up()
-
 # Function to send follow-up email
 def send_follow_up():
     subject = "Following Up: Waiting for Your Reply"
@@ -126,24 +148,14 @@ def send_follow_up():
 
 # Main function to run the script
 def main():
-    # Collect new production company emails
-    new_companies = input("Enter new production company names and emails in the format 'Company Name : email' separated by commas (or press Enter to skip): ")
-    if new_companies:
-        new_companies_list = [company.strip().split(':') for company in new_companies.split(',')]
-        companies = load_production_companies()
-
-        for name, email in new_companies_list:
-            companies[name.strip()] = email.strip()
-        
-        save_production_companies(companies)
-
+    companies = load_production_companies()
     # Collect new scripts
-    new_scripts = input("Enter new script titles separated by commas (or press Enter to skip): ")
-    if new_scripts:
-        new_scripts_list = [script.strip() for script in new_scripts.split(',')]
-        send_story(new_scripts_list)
-    else:
+    # new_scripts = input("Enter new script titles separated by commas (or press Enter to skip): ")
+    follow_up_or_not = input("Do you want to send follow-up emails? (yes/no): ").strip().lower()
+    if follow_up_or_not == 'yes':
         send_follow_up()
+    else:
+        send_story()
 
 if __name__ == "__main__":
     main()
